@@ -24,6 +24,9 @@ docs/site/
 Manifest.toml
 
 data/
+results/
 .vscode/
 .CondaPkg/
 catboost_info/
+__pycache__/
+*.pyc

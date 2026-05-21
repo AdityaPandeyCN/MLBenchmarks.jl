@@ -1,5 +1,5 @@
 using MLBenchmarks
-import MLBenchmarks: mse, mae, logloss, accuracy, gini, ndcg
+import MLBenchmarks: mse, rmse, mae, logloss, accuracy, gini, ndcg
 import MLBenchmarks: run_experiment
 
 using DataFrames
@@ -7,49 +7,33 @@ using CSV
 using Statistics: mean, std
 using StatsBase: sample
 using OrderedCollections
+using Zygote
 
 data_name = :year
-hyper_size = 16
+tabm_hyper_size = 16
+modernnca_hyper_size = 8
 data = load_data(data_name; uniformize=true)
+metrics = [:mse, :rmse]
+mkpath(joinpath("results", string(data_name)))
 
 ################################
 # TabM
 ################################
-hyper_list = MLBenchmarks.get_hyper_tabm(hyper_size; data.loss, data.metric, device=:gpu, nrounds=200, early_stopping_rounds=2, lr=1e-3, arch_type=:tabm, k=[8, 16, 32], d_block=[32, 64, 128], n_blocks=2:3, dropout=0.1, batchsize=1024, embedding_type=:piecewise, d_embedding=[8, 16], bins=[16, 32])
-results_df = run_experiment(:NeuroTabModels, data, hyper_list; data.metrics)
+hyper_list = MLBenchmarks.get_hyper_tabm(tabm_hyper_size; data.loss, data.metric, device=:gpu, backend=:zygote, nrounds=200, early_stopping_rounds=2, lr=1e-3, arch_type=:tabm, k=[8, 16, 32], d_block=[32, 64, 128], n_blocks=2:3, dropout=0.1, batchsize=1024, seed=123, embedding_type=:piecewise, d_embedding=[8, 16], bins=[16, 32])
+results_df = run_experiment(:NeuroTabModels, data, hyper_list; metrics)
 CSV.write(joinpath("results", string(data_name), "tabm.csv"), results_df)
 
-################################
-# NeuroTrees
-################################
-hyper_list = MLBenchmarks.get_hyper_neurotrees(hyper_size; data.loss, data.metric, device=:gpu, nrounds=200, early_stopping_rounds=2, lr=1e-3, k=[8], ntrees=[32, 64, 128], stack_size=[1], depth=[3, 4, 5], hidden_size=[8, 16, 32], init_scale=0.1, batchsize=1024, embedding_type=:piecewise, d_embedding=[8, 16], bins=[16, 32])
-results_df = run_experiment(:NeuroTabModels, data, hyper_list; data.metrics)
-CSV.write(joinpath("results", string(data_name), "neurotrees.csv"), results_df)
+hyper_list = MLBenchmarks.get_hyper_talent_tabm(tabm_hyper_size; nrounds=200, lr=1e-3, arch_type=:tabm, k=[8, 16, 32], d_block=[32, 64, 128], n_blocks=2:3, dropout=0.1, batchsize=1024, seed=123, d_embedding=[8, 16], normalization="none")
+results_df = run_experiment(:TALENT, data, hyper_list; metrics, save_root=joinpath("results", string(data_name), "talent_checkpoints"))
+CSV.write(joinpath("results", string(data_name), "talent_tabm.csv"), results_df)
 
 ################################
-# EvoTrees
+# ModernNCA
 ################################
-hyper_list = MLBenchmarks.get_hyper_evotrees(hyper_size; data.loss, data.metric, nrounds=4000, early_stopping_rounds=10, eta=0.05, max_depth=6:11, rowsample=[0.4, 0.6, 0.8, 1.0], colsample=[0.4, 0.6, 0.8, 1.0], L2=[0, 1, 10])
-results_df = run_experiment(:EvoTrees, data, hyper_list; data.metrics)
-CSV.write(joinpath("results", string(data_name), "evotrees.csv"), results_df)
+hyper_list = MLBenchmarks.get_hyper_modernnca(modernnca_hyper_size; data.loss, data.metric, device=:gpu, backend=:zygote, nrounds=200, early_stopping_rounds=2, lr=1e-3, d_embedding=[64, 128], d_block=[128, 256], n_blocks=[1, 2], dropout=0.1, temperature=1.0, sample_rate=0.01, batchsize=1024, seed=123)
+results_df = run_experiment(:NeuroTabModels, data, hyper_list; metrics)
+CSV.write(joinpath("results", string(data_name), "modernnca.csv"), results_df)
 
-################################
-# XGBoost
-################################
-hyper_list = MLBenchmarks.get_hyper_xgboost(hyper_size; data.loss, data.metric, num_round=4000, early_stopping_rounds=10, eta=0.05, max_depth=5:10, subsample=[0.4, 0.6, 0.8, 1.0], colsample_bytree=[0.4, 0.6, 0.8, 1.0], lambda=[0, 1, 10])
-results_df = run_experiment(:XGBoost, data, hyper_list; data.metrics)
-CSV.write(joinpath("results", string(data_name), "xgboost.csv"), results_df)
-
-################################
-# LightGBM
-################################
-hyper_list = MLBenchmarks.get_hyper_lgbm(hyper_size; data.loss, data.metric, num_iterations=4000, early_stopping_round=10, learning_rate=0.05, num_leaves=2 .^ (5:10), bagging_fraction=[0.3, 0.6, 0.9], feature_fraction=[0.5, 0.9], lambda_l2=[0, 1, 10])
-results_df = run_experiment(:LightGBM, data, hyper_list; data.metrics)
-CSV.write(joinpath("results", string(data_name), "lightgbm.csv"), results_df)
-
-################################
-# CatBoost
-################################
-hyper_list = MLBenchmarks.get_hyper_catboost(hyper_size; data.loss, data.metric, iterations=4000, early_stopping_rounds=10, learning_rate=0.1, max_depth=5:10, subsample=[0.3, 0.6, 0.9], rsm=[0.5, 0.9], reg_lambda=[0, 1, 10])
-results_df = run_experiment(:CatBoost, data, hyper_list; data.metrics)
-CSV.write(joinpath("results", string(data_name), "catboost.csv"), results_df)
+hyper_list = MLBenchmarks.get_hyper_talent_modernnca(modernnca_hyper_size; nrounds=200, lr=1e-3, dim=[64, 128], d_block=[128, 256], n_blocks=[1, 2], dropout=0.1, temperature=1.0, sample_rate=0.01, batchsize=1024, seed=123, normalization="none")
+results_df = run_experiment(:TALENT, data, hyper_list; metrics, save_root=joinpath("results", string(data_name), "talent_checkpoints"))
+CSV.write(joinpath("results", string(data_name), "talent_modernnca.csv"), results_df)

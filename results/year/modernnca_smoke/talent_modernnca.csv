@@ -1,0 +1,2 @@
+model_type,hyper_id,train_time,best_nround,device,backend,batchsize,epochs,seed,arch_config,embedding_config,lr,wd,eval_mse,test_mse,eval_rmse,test_rmse
+TALENT-modernNCA,1,2.8162711940094596,2,cpu,torch,256,2,123,"Dict{String, Any}(""d_block"" => 64, ""sample_rate"" => 0.01, ""dropout"" => 0.1, ""dim"" => 32, ""num_embeddings"" => nothing, ""n_blocks"" => 1, ""temperature"" => 1.0)",nothing,0.001,0.0,0.8343213895099656,0.9204641214008646,0.9134119495112627,0.9594082141616594

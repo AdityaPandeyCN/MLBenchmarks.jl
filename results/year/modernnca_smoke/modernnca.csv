@@ -1,0 +1,2 @@
+model_type,hyper_id,train_time,best_nround,batchsize,epochs,seed,arch_config,embedding_config,lr,wd,eval_mse,test_mse,eval_rmse,test_rmse
+ModernNCA,1,1.924220557,2,256,2,123,"Dict{Symbol, Real}(:sample_rate => 0.01, :d_embedding => 32, :d_block => 64, :n_blocks => 1, :temperature => 1.0, :dropout => 0.1)",missing,0.001,0.0,0.9092184644000307,1.0104770480555152,0.9535294774678079,1.0052248743716579

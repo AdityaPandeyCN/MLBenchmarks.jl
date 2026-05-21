@@ -1,11 +1,12 @@
 module Metrics
 
-export mse, mae, logloss, accuracy, gini, ndcg
+export mse, rmse, mae, logloss, accuracy, gini, ndcg
 export metric_dict
 
 using Statistics: mean, std
 
 mse(p, y) = mean((p .- y) .^ 2)
+rmse(p, y) = sqrt(mse(p, y))
 mae(p, y) = mean(abs.(p .- y))
 
 accuracy(p::Vector{Int}, y::Vector{Int}) = mean(p .== y)
@@ -62,6 +63,7 @@ end
 
 const metric_dict = Dict{Symbol,Function}(
     :mse => mse,
+    :rmse => rmse,
     :mae => mae,
     :logloss => logloss,
     :accuracy => accuracy,

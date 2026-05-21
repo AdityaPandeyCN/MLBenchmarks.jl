@@ -1,7 +1,17 @@
 using NeuroTabModels
 
+_as_iter(x) = x isa Union{AbstractArray,AbstractRange,Tuple} ? x : (x,)
+
 include("neurotrees.jl")
 include("tabM.jl")
+include("modernnca.jl")
+
+_neurotab_model_type(hyper) = replace(string(get(hyper, :arch_name, "NeuroTabModels")), "Config" => "")
+
+function _as_metric_vector(p)
+    p isa AbstractMatrix && size(p, 2) == 1 && return p[:, 1]
+    return p
+end
 
 function run_experiment(
     ::Val{:NeuroTabModels},
@@ -37,12 +47,21 @@ function run_experiment(
         )
         p_eval = m(deval)
         p_test = m(dtest)
+        p_eval = _as_metric_vector(p_eval)
+        p_test = _as_metric_vector(p_test)
 
         res = OrderedDict{Symbol,Any}(
-            :model_type => "neurotrees",
+            :model_type => _neurotab_model_type(hyper),
             :hyper_id => i,
             :train_time => train_time,
             :best_nround => m.info[:logger][:best_iter],
+            :batchsize => get(hyper, :batchsize, missing),
+            :epochs => get(hyper, :nrounds, missing),
+            :seed => get(hyper, :seed, missing),
+            :arch_config => string(get(hyper, :arch_config, missing)),
+            :embedding_config => string(get(hyper, :embedding_config, missing)),
+            :lr => get(hyper, :lr, missing),
+            :wd => get(hyper, :wd, missing),
         )
 
         for metric in metrics

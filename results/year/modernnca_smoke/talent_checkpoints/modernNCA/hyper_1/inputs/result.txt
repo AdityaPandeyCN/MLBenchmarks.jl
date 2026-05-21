@@ -1,0 +1,3 @@
+train_time=2.8162711940094596
+best_nround=2
+device=cpu

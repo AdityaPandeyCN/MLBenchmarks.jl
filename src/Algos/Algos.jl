@@ -12,6 +12,7 @@ function run_experiment(::Val{A}, data, hyper_list; kwargs...) where {A}
 end
 
 include("neurotabmodels/neurotabmodels.jl")
+include("talent.jl")
 include("evotrees.jl")
 include("xgboost.jl")
 include("lightgbm.jl")
