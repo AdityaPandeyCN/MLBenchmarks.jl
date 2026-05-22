@@ -5,6 +5,7 @@ using CSV
 using DataFrames
 using NeuroTabModels
 using Reactant
+using LuxCUDA
 
 data_name = :year
 data = load_data(data_name; uniformize=false)
@@ -34,7 +35,7 @@ learner = NeuroTabModels.NeuroTabRegressor(
     early_stopping_rounds=2,
     lr=1e-3,
     batchsize=1024,
-    device=:cpu,
+    device=:gpu,
     backend=:reactant,
 )
 
@@ -62,7 +63,7 @@ test_rmse = rmse(p_test, data.dtest[!, data.target_name])
 results_df = DataFrame([(
     model_type="ModernNCA",
     backend="reactant",
-    device="cpu",
+    device="gpu",
     train_time=train_time,
     best_nround=m.info[:logger][:best_iter],
     batchsize=1024,
